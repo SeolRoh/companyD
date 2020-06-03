@@ -5,6 +5,7 @@ import com.companyd.hompage.seoul.entity.SignUpResponseData;
 import com.companyd.hompage.seoul.entity.Users;
 import com.companyd.hompage.seoul.exception.UserNotFoundException;
 import com.companyd.hompage.seoul.service.UserService;
+import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -44,23 +45,20 @@ public class UsersController {
 
 //  회원가입
     @RequestMapping(value = "/signup", method = RequestMethod.POST)
-    public SignUpResponseData createUser(@Valid @RequestBody Users user){
-        System.out.println("post 등록");
-        int createdUser = service.createUser(user);
-//        System.out.println("createdUser 함수로 가져온 id 값" + createdUser);
-//        Users getUser = service.getUserById(createdUser);
-//        if(getUser != null){
-//            return getUser;
-//        }
-//        return getUser;
+    public Users createUser(@Valid @RequestBody Users user){
+        System.out.println("회원 가입 정보 등록");
         SignUpResponseData res = new SignUpResponseData();
+        String hashPassword = BCrypt.hashpw(user.getPassword(),BCrypt.gensalt());
+        user.setPassword(hashPassword); //암호화 저장
+        int createdUser = service.createUser(user);
+
         if(createdUser >= 1){ // xml파일에다 id값 return받기로함
             res.setIsSucceed(1);
         }else{
             res.setIsSucceed(0);
-            // UserNotFoundException("No-CreatedUser");
         }
-        return res;
+        Users GetUser = service.getUserById(createdUser);
+        return GetUser;
     }
 
 //  회원탈퇴
@@ -71,33 +69,5 @@ public class UsersController {
             throw new UserNotFoundException("id-" + id);
         }
         return user;
-    }
-//    @GetMapping("/abc")
-//    public List<Users> getUsers() {
-//        List<Users> list = service.getAllUsers();
-//        return list;
-//    }
-
-    @GetMapping("/login2")
-    public List<Users> getUsers() {
-        List<Users> list = service.getAllUsers();
-        return list;
-    }
-
-    @PostMapping("/login")
-    public LoginResponseData getLogin(@RequestBody Users user){
-
-        System.out.println("login test");
-        Users login = service.getLogin(user);
-        LoginResponseData res = new LoginResponseData();
-        if(user.getPassword().equals(login.getPassword())){
-            res.setIsSucceed(1);
-            System.out.println("로그인 성공");
-        }else if(!user.getPassword().equals(login.getPassword())){
-            res.setIsSucceed(0); System.out.println("비번이 서로 달라 로그인 실패");
-        }else if (user.getEmail() == null || user.getPassword() == null){
-            res.setIsSucceed(0); System.out.println("둘중에 하나 널값들어옴");
-        }
-        return res;
     }
 }
